@@ -37,33 +37,32 @@ vpnContainer="gluetun"
 
 testDockerVPNIP() {
 	# Test only dockers that should be behind a VPN
-	#dockers=( 'jackett' 'qbittorrent' 'sonarr' 'radarr' 'lidarr' 'bazarr' 'overseerr' 'ombi' )
+	dockers=("Jackett" "qBitTorrent" "Sonarr" "Radarr" "Lidarr" "Bazarr" "Overseerr" "Ombi")
+	columns=2
 
-	#out=""
-	#for container in ${dockers[@]}; do
-		if [[ ${1} == ${VPNIP} && ${1} != "" ]]; then
-			if [[ ${3} == "yes" ]]; then
-				echo -en "	"
-				echo -e "${GREENCHECK} ${2}"
-			else
-				echo -en "${prefix}${GREENCHECK} ${2}"
-			fi
-		elif [[ ${1} == "None" ]]; then
-			if [[ ${3} == "yes" ]]; then
-				echo -en "	"
-				echo -e "${REDCROSS} ${2}"
-			else
-				echo -en "${prefix}${REDCROSS} ${2}"
-			fi
-		else
-			if [[ ${3} == "yes" ]]; then
-				echo -en "	"
-				echo -e "${FIRE} ${RED}${2}${NOCOLOR}"
-			else
-				echo -en "${prefix}${FIRE} ${RED}${2}${NOCOLOR}"
-			fi
+	out=""
+	for i in ${!dockers[@]}; do
+		#echo "Docker: ${container}"
+		dockerIP=$(docker exec ${dockers[$i],,} curl -s ifconfig.io)
+
+		if [ $((($i+1) % $columns)) -eq 1 ]; then
+			out+="${prefix}"
 		fi
-	#done
+
+		if [[ ${dockerIP} == ${VPNIP} && ${dockerIP} != "" ]]; then
+			out+="${GREENCHECK} ${dockers[$i]},"
+		elif [[ -z ${dockerIP} ]]; then
+			out+="${REDCROSS} ${dockers[$i]},"
+		else
+			out+="${FIRE} ${RED}${dockers[$i]}${NOCOLOR},"
+		fi
+
+		if [ $((($i+1) % $columns)) -eq 0 ]; then
+			out+="\n"
+		fi
+	done
+
+	echo -e "$out" | column -ts $',' 
 }
 
 getPublicIP()
@@ -105,17 +104,17 @@ getVpnIP()
 	done
 }
 
-getDockerIPs()
-{
-	JACKETTIP=`docker exec jackett curl -s ifconfig.io &`
-	QBITTORRENTIP=`docker exec qbittorrent curl -s ifconfig.io &`
-	SONARRIP=`docker exec sonarr curl -s ifconfig.io &`
-	RADARRIP=`docker exec radarr curl -s ifconfig.io &`
-	LIDARRIP=`docker exec lidarr curl -s ifconfig.io &`
-	BAZARRIP=`docker exec bazarr curl -s ifconfig.io &`
-	OVERSEERRIP=`docker exec overseerr curl -s ifconfig.io &`
-	OMBIIP=`docker exec ombi curl -s ifconfig.io &`
-}
+#getDockerIPs()
+#{
+#	JACKETTIP=`docker exec jackett curl -s ifconfig.io &`
+#	QBITTORRENTIP=`docker exec qbittorrent curl -s ifconfig.io &`
+#	SONARRIP=`docker exec sonarr curl -s ifconfig.io &`
+#	RADARRIP=`docker exec radarr curl -s ifconfig.io &`
+#	LIDARRIP=`docker exec lidarr curl -s ifconfig.io &`
+#	BAZARRIP=`docker exec bazarr curl -s ifconfig.io &`
+#	OVERSEERRIP=`docker exec overseerr curl -s ifconfig.io &`
+#	OMBIIP=`docker exec ombi curl -s ifconfig.io &`
+#}
 
 echo -e "${prefix}${CYAN}===============================================${NOCOLOR}"
 echo -e "${prefix}${CYAN}== ${NOCOLOR}Testing Docker containers attached to VPN ${CYAN}==${NOCOLOR}"
@@ -128,11 +127,9 @@ echo -en "${prefix}Please wait..."
 
 getPublicIP
 getVpnIP
-getDockerIPs
 
 #Clear Please Wait line 
 echo -en "\033[999D\033[K"
-echo "Overseerr IP: ${OVERSEERRIP}"
 
 echo -e "${prefix}${CYAN}-----------------------------------${NOCOLOR}"
 echo -e "${prefix}${CYAN}------${NOCOLOR}   Public IP Address   ${CYAN}------${NOCOLOR}"
@@ -142,72 +139,6 @@ echo -e "${prefix}${CYAN}------${NOCOLOR}  VPN Pub IP Address   ${CYAN}------${N
 echo -e "${prefix}${CYAN}------     ${ORANGE}${VPNIP}${CYAN}      ------${NOCOLOR}"
 echo -e "${prefix}${CYAN}-----------------------------------${NOCOLOR}"
 
-testDockerVPNIP ${JACKETTIP:=None} Jackett
-testDockerVPNIP ${QBITTORRENTIP:=None} qBitTorrent yes
-testDockerVPNIP ${OVERSEERRIP:=None} Overseerr
-testDockerVPNIP ${OMBIIP:=None} Ombi yes
-testDockerVPNIP ${SONARRIP:=None} Sonarr
-testDockerVPNIP ${LIDARRIP:=None} Lidarr yes
-testDockerVPNIP ${RADARRIP:=None} Radarr
-testDockerVPNIP ${BAZARRIP:=None} Bazarr yes
+testDockerVPNIP
 
-
-#if [[ ${TRANSIP} == ${VPNIP} && ${TRANSIP} != "" ]]; then
-#	echo -en "${GREENCHECK} Transmission"
-#elif [[ ${TRANSIP} == "" ]]; then
-#	echo -en "${YELLOWHAZARD} Transmission"
-#else
-#	echo -en "${REDCROSS} ${RED}Transmission${NOCOLOR}"
-#fi
-#
-#if [[ ${OMBIIP} == ${VPNIP} && ${OMBIIP} != "" ]]; then
-#	echo -en "	"
-#	echo -e "${GREENCHECK} Ombi"
-#elif [[ ${TRANSIP} == "" ]]; then
-#	echo -en "${YELLOWHAZARD} Transmission"
-#else
-#	echo -en "	"
-#	echo -e "${REDCROSS} ${RED}Ombi${NOCOLOR}"
-#fi
-#
-#if [[ ${SONARRIP} == ${VPNIP} && ${SONARRIP} != "" ]]; then
-#	echo -en "${GREENCHECK} Sonarr"
-#elif [[ ${TRANSIP} == "" ]]; then
-#	echo -en "${YELLOWHAZARD} Transmission"
-#else
-#	echo -en "${REDCROSS} ${RED}Sonarr${NOCOLOR}"
-#fi
-#
-#if [[ ${LIDARRIP} == ${VPNIP} && ${LIDARRIP} != "" ]]; then
-#	echo -en "	"
-#	echo -e "${GREENCHECK} Lidarr"
-#elif [[ ${TRANSIP} == "" ]]; then
-#	echo -en "${YELLOWHAZARD} Transmission"
-#else
-#	echo -en "	"
-#	echo -e "${REDCROSS} ${RED}Lidarr${NOCOLOR}"
-#fi
-#
-#if [[ ${RADARRIP} == ${VPNIP} && ${RADARRIP} != "" ]]; then
-#	echo -en "${GREENCHECK} Radarr"
-#elif [[ ${TRANSIP} == "" ]]; then
-#	echo -en "${YELLOWHAZARD} Transmission"
-#else
-#	echo -en "${REDCROSS} ${RED}Radarr${NOCOLOR}"
-#fi
-#
-#if [[ ${BAZARRIP} == ${VPNIP} && ${BAZARRIP} != "" ]]; then
-#	echo -en "	"
-#	echo -en "${GREENCHECK} Bazarr"
-#elif [[ ${TRANSIP} == "" ]]; then
-#	echo -en "${YELLOWHAZARD} Transmission"
-#else
-#	echo -en "	"
-#	echo -en "${REDCROSS} ${RED}Bazarr${NOCOLOR}"
-#fi
-
-
-
-echo
-
-
+exit
